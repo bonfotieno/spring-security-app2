@@ -1,36 +1,36 @@
 package com.bonnieapps.springsecurityapp2.security;
 
 
+import com.bonnieapps.springsecurityapp2.auth.ApplicationUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import java.util.concurrent.TimeUnit;
 
-import static com.bonnieapps.springsecurityapp2.security.ApplicationUserPermission.*;
-import static com.bonnieapps.springsecurityapp2.security.ApplicationUserRole.*;
-
 
 @Configuration
-@EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true) // to enable roles or permissions being reinforced on controller methods
 public class ApplicationSecurityConfig {
 
     private final PasswordEncoder passwordEncoder;
+    private final ApplicationUserService applicationUserService;
 
     @Autowired
-    public ApplicationSecurityConfig(PasswordEncoder passwordEncoder) {
+    public ApplicationSecurityConfig(PasswordEncoder passwordEncoder, ApplicationUserService applicationUserService) {
         this.passwordEncoder = passwordEncoder;
+        this.applicationUserService = applicationUserService;
     }
 
 
@@ -40,19 +40,10 @@ public class ApplicationSecurityConfig {
          * This method is where we define our web security rules
          * */
         http
-//                .csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-//                .and()
                 .csrf().disable()
                 .authorizeHttpRequests()  // authorize requests
                 .antMatchers("/", "index", "/css/*", "/js/*").permitAll()
                 .antMatchers("/api/**").hasRole(ApplicationUserRole.STUDENT.name()) //role based authentication
-
-//                 permission based Auth
-//                .antMatchers( "/management/api/**").hasAnyRole(ADMIN.name(), ADMINTRANEE.name())
-//                .antMatchers(HttpMethod.DELETE, "/management/api/**").hasAuthority(COURSE_WRITE.getPermission())
-//                .antMatchers(HttpMethod.POST, "/management/api/**").hasAuthority(COURSE_WRITE.getPermission())
-//                .antMatchers(HttpMethod.PUT, "/management/api/**").hasAuthority(COURSE_WRITE.getPermission())
-
                 .anyRequest()
                 .authenticated() //any request must be authenticated i.e. client must specify the username and passwd
                 .and()
@@ -79,33 +70,12 @@ public class ApplicationSecurityConfig {
         return http.build();
     }
 
-
     @Bean
-    protected UserDetailsService userDetailsService(){
-        UserDetails mimi = User.builder()
-                .username("mimi56")
-                .password(passwordEncoder.encode("password") )
-//                .roles(ApplicationUserRole.STUDENT.name())  //internally spring will store it like ROLE_STUDENT
-                .authorities(STUDENT.getGrantedAuthorities())
-                .build();
+    public AuthenticationProvider authenticationProvider(){
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setPasswordEncoder(passwordEncoder);
+        provider.setUserDetailsService(applicationUserService);
 
-        UserDetails quill = User.builder()
-                .username("quill")
-                .password(passwordEncoder.encode("password123") )
-//                .roles(ADMIN.name())  //internally spring will store it like ROLE_ADMIN
-                .authorities(ADMIN.getGrantedAuthorities())
-                .build();
-
-        UserDetails tonny = User.builder()
-                .username("tonny")
-                .password(passwordEncoder.encode("#password123") )
-//                .roles(ApplicationUserRole.ADMINTRANEE.name())  //internally spring will store it like ROLE_ADMINTRANEE
-                .authorities(ADMINTRANEE.getGrantedAuthorities())
-                .build();
-        return new InMemoryUserDetailsManager(
-                mimi,
-                quill,
-                tonny
-        );
+        return provider;
     }
 }
