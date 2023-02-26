@@ -42,7 +42,6 @@ public class JwtUsernameAndPasswordAuthenticationFilter extends UsernamePassword
                     authenticationRequest.getPassword()
             );
             Authentication authenticate = authenticationManager.authenticate(authentication); // checks if username exists and the password is correct
-
             return authenticate;
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -53,7 +52,7 @@ public class JwtUsernameAndPasswordAuthenticationFilter extends UsernamePassword
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response,
                                             FilterChain chain, Authentication authResult) throws IOException, ServletException {
         // this method is invoked after successful authentication
-        String secret = "secure2345secure6789secure321";
+        String secret = "secure2345secure6789secure321secure2345secure6789secure321secure2345secure6789secure321";
         String token = Jwts.builder()
                 .setSubject(authResult.getName())
                 .claim("authorities", authResult.getAuthorities()) // claim and body is actually the same thing
