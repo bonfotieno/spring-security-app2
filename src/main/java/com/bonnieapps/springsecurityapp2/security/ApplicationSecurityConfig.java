@@ -2,6 +2,7 @@ package com.bonnieapps.springsecurityapp2.security;
 
 
 import com.bonnieapps.springsecurityapp2.auth.ApplicationUserService;
+import com.bonnieapps.springsecurityapp2.jwt.JwtTokenVerifier;
 import com.bonnieapps.springsecurityapp2.jwt.JwtUsernameAndPasswordAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -46,14 +47,19 @@ public class ApplicationSecurityConfig {
          * */
         http
                 .csrf().disable()
-                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS) // keeps the session stateless since it's using JWT for auth
+                .sessionManagement()
+                    .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // keeps the session stateless since it's using JWT for auth
                 .and()
                 .addFilter(new JwtUsernameAndPasswordAuthenticationFilter(authenticationManager()))
+                .addFilterAfter(
+                        new JwtTokenVerifier(),             //JwtTokenVerifier acts after JwtUsernameAndPasswordAuthenticationFilter executes
+                        JwtUsernameAndPasswordAuthenticationFilter.class
+                )
                 .authorizeHttpRequests()  // authorize requests
                 .antMatchers("/", "index", "/css/*", "/js/*").permitAll()
                 .antMatchers("/api/**").hasRole(ApplicationUserRole.STUDENT.name()) //role based authentication
                 .anyRequest()
-                .authenticated(); //any request must be authenticated i.e. client must specify the username and passwd
+                .authenticated();
 
         return http.build();
     }
