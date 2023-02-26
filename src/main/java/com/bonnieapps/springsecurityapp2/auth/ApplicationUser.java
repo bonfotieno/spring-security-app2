@@ -1,11 +1,16 @@
 package com.bonnieapps.springsecurityapp2.auth;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.Set;
 
+@Data
 public class ApplicationUser implements UserDetails {
 
     private final String password;
@@ -16,8 +21,8 @@ public class ApplicationUser implements UserDetails {
     private final boolean isCredentialsNonExpired;
     private final boolean isEnabled;
 
-    public ApplicationUser(String password,
-                           String username,
+    public ApplicationUser(String username,
+                           String password,
                            Set<? extends GrantedAuthority> grantedAuthorities,
                            boolean isAccountNonExpired,
                            boolean isAccountNonLocked,
