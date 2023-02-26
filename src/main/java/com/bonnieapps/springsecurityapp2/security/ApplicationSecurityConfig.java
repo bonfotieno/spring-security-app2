@@ -2,6 +2,7 @@ package com.bonnieapps.springsecurityapp2.security;
 
 
 import com.bonnieapps.springsecurityapp2.auth.ApplicationUserService;
+import com.bonnieapps.springsecurityapp2.jwt.JwtConfig;
 import com.bonnieapps.springsecurityapp2.jwt.JwtTokenVerifier;
 import com.bonnieapps.springsecurityapp2.jwt.JwtUsernameAndPasswordAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,19 +12,13 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
-import java.util.concurrent.TimeUnit;
+import javax.crypto.SecretKey;
 
 
 @Configuration
@@ -33,10 +28,15 @@ public class ApplicationSecurityConfig {
     private final PasswordEncoder passwordEncoder;
     private final ApplicationUserService applicationUserService;
 
+    private final SecretKey secretKey;
+    private final JwtConfig jwtConfig;
+
     @Autowired
-    public ApplicationSecurityConfig(PasswordEncoder passwordEncoder, ApplicationUserService applicationUserService) {
+    public ApplicationSecurityConfig(PasswordEncoder passwordEncoder, ApplicationUserService applicationUserService, SecretKey secretKey, JwtConfig jwtConfig) {
         this.passwordEncoder = passwordEncoder;
         this.applicationUserService = applicationUserService;
+        this.secretKey = secretKey;
+        this.jwtConfig = jwtConfig;
     }
 
 
@@ -50,9 +50,9 @@ public class ApplicationSecurityConfig {
                 .sessionManagement()
                     .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // keeps the session stateless since it's using JWT for auth
                 .and()
-                .addFilter(new JwtUsernameAndPasswordAuthenticationFilter(authenticationManager()))
+                .addFilter(new JwtUsernameAndPasswordAuthenticationFilter(authenticationManager(), jwtConfig, secretKey))
                 .addFilterAfter(
-                        new JwtTokenVerifier(),             //JwtTokenVerifier acts after JwtUsernameAndPasswordAuthenticationFilter executes
+                        new JwtTokenVerifier(secretKey, jwtConfig),             //JwtTokenVerifier acts after JwtUsernameAndPasswordAuthenticationFilter executes
                         JwtUsernameAndPasswordAuthenticationFilter.class
                 )
                 .authorizeHttpRequests()  // authorize requests
@@ -74,7 +74,6 @@ public class ApplicationSecurityConfig {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setPasswordEncoder(passwordEncoder);
         provider.setUserDetailsService(applicationUserService);
-
         return provider;
     }
 }
