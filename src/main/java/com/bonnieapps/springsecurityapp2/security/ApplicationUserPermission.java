@@ -14,8 +14,10 @@ public enum ApplicationUserPermission {
     private final String permission;
 
     ApplicationUserPermission(String permission){
-        //if you didn't know, Enum constructor is called by its elements; when calling the elements you are actually calling the constructor
         this.permission = permission;
+
+        //if you didn't know, Enum constructor is called by its elements; when calling the elements you are actually calling the constructor.
+        //e.g. STUDENT_READ.getPermission()
     }
 
     public String getPermission() {
